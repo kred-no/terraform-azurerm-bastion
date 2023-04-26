@@ -7,26 +7,19 @@ data "azurerm_resource_group" "MAIN" {
 }
 
 data "azurerm_virtual_network" "MAIN" {
-  name                = var.virtual_network.name
-  resource_group_name = var.virtual_network.resource_group_name
+  name                = var.subnet.virtual_network_name
+  resource_group_name = var.subnet.resource_group_name
+}
+
+data "azurerm_subnet" "MAIN" {
+  name                 = var.subnet.name
+  resource_group_name  = var.subnet.resource_group_name
+  virtual_network_name = var.subnet.virtual_network_name
 }
 
 ////////////////////////
 // Network
 ////////////////////////
-
-resource "azurerm_subnet" "MAIN" {
-  name = "AzureBastionSubnet" // Required Subnet name
-
-  address_prefixes = [cidrsubnet(
-    element(data.azurerm_virtual_network.MAIN.address_space, var.subnet.vnet_index),
-    var.subnet.newbits,
-    var.subnet.netnum,
-  )]
-
-  resource_group_name  = data.azurerm_virtual_network.MAIN.resource_group_name
-  virtual_network_name = data.azurerm_virtual_network.MAIN.name
-}
 
 resource "azurerm_public_ip" "MAIN" {
   name                = var.public_ip_name
@@ -44,7 +37,7 @@ resource "azurerm_public_ip" "MAIN" {
 resource "azurerm_network_security_group" "MAIN" {
   count = var.nsg_enabled ? 1 : 0
 
-  name                = join("-", [azurerm_subnet.MAIN.name, "nsg"])
+  name                = format("%s-nsg", data.azurerm_subnet.MAIN.name)
   tags                = var.tags
   location            = data.azurerm_virtual_network.MAIN.location
   resource_group_name = data.azurerm_virtual_network.MAIN.resource_group_name
@@ -194,7 +187,7 @@ resource "azurerm_network_security_rule" "REQUIRED" {
 ////////////////////////
 
 resource "azurerm_bastion_host" "MAIN" {
-  name                   = join("-", [var.bastion_prefix, data.azurerm_virtual_network.MAIN.name])
+  name                   = format("%s-%s", var.bastion_prefix, data.azurerm_virtual_network.MAIN.name)
   copy_paste_enabled     = var.copy_paste_enabled
   file_copy_enabled      = var.bastion_sku_standard.file_copy_enabled
   ip_connect_enabled     = var.bastion_sku_standard.ip_connect_enabled
@@ -204,7 +197,7 @@ resource "azurerm_bastion_host" "MAIN" {
 
   ip_configuration {
     name                 = "bastion-ipcfg"
-    subnet_id            = azurerm_subnet.MAIN.id
+    subnet_id            = data.azurerm_subnet.MAIN.id
     public_ip_address_id = azurerm_public_ip.MAIN.id
   }
 

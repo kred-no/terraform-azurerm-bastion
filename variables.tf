@@ -10,22 +10,16 @@ variable "tags" {
 
 variable "resource_group" {
   type = object({
-    name = string
-  })
-}
-
-variable "virtual_network" {
-  type = object({
-    name                = string
-    resource_group_name = string
+    name     = string
+    location = string
   })
 }
 
 variable "subnet" {
   type = object({
-    vnet_index = optional(number, 0)
-    newbits    = optional(number, 11)
-    netnum     = number
+    name                 = string
+    resource_group_name  = string
+    virtual_network_name = string
   })
 }
 
