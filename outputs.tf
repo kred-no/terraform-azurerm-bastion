@@ -13,7 +13,7 @@ output "connection_info" {
 
 output "subnet" {
   sensitive = false
-  value     = azurerm_subnet.MAIN
+  value     = data.azurerm_subnet.MAIN
 }
 
 output "azurerm_network_security_group" {
